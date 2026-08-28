@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Maintenance & Inspection Portal</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-icon">⚙️</div>
+                <div class="brand-text">
+                    <h1>Machine Maintenance & Inspection</h1>
+                    <p class="subtitle">Live Service Logs & Quality Assurance System</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="live-pill"><span class="dot"></span> Connected API</span>
+                <button class="btn btn-primary" id="openModalBtn">
+                    <span class="btn-icon">＋</span> New Web Entry
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Dashboard Metric Cards -->
+        <section class="metrics-grid">
+            <div class="card metric-card">
+                <div class="metric-info">
+                    <span class="metric-title">Total Services</span>
+                    <h2 class="metric-value" id="statTotal">0</h2>
+                </div>
+                <div class="metric-badge-icon icon-total">📋</div>
+            </div>
+            
+            <div class="card metric-card">
+                <div class="metric-info">
+                    <span class="metric-title">Passed Checks</span>
+                    <h2 class="metric-value pass-text" id="statPass">0</h2>
+                </div>
+                <div class="metric-badge-icon icon-pass">✅</div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="metric-info">
+                    <span class="metric-title">Failed Checks</span>
+                    <h2 class="metric-value fail-text" id="statFail">0</h2>
+                </div>
+                <div class="metric-badge-icon icon-fail">⚠️</div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="metric-info">
+                    <span class="metric-title">Pass Rate</span>
+                    <h2 class="metric-value" id="statRate">0%</h2>
+                </div>
+                <div class="metric-badge-icon icon-rate">📊</div>
+            </div>
+        </section>
+
+        <!-- Records Table Section -->
+        <section class="card table-card">
+            <div class="table-header-toolbar">
+                <div class="toolbar-title-group">
+                    <h3>Service & Inspection Records</h3>
+                    <span class="records-badge" id="recordCountBadge">0 Records</span>
+                </div>
+                
+                <div class="toolbar-controls">
+                    <!-- Search Input -->
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" placeholder="Search machine, maintainer, checker...">
+                    </div>
+
+                    <!-- Filter Dropdown -->
+                    <div class="filter-group">
+                        <select id="statusFilter" class="select-filter">
+                            <option value="">All Statuses</option>
+                            <option value="PASS">PASS Only</option>
+                            <option value="FAIL">FAIL Only</option>
+                        </select>
+                    </div>
+
+                    <!-- Refresh Button -->
+                    <button class="btn btn-outline" id="refreshBtn" title="Refresh Table">
+                        <span class="btn-icon">🔄</span> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Responsive Table Container -->
+            <div class="table-wrapper">
+                <table class="data-table" id="recordsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">#ID</th>
+                            <th style="width: 130px;">Service Date</th>
+                            <th>Machine / Unit</th>
+                            <th>Maintained By</th>
+                            <th>Checked By</th>
+                            <th style="width: 110px;">Status</th>
+                            <th>Remarks</th>
+                            <th style="width: 80px; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Dynamic Records populated by script.js -->
+                    </tbody>
+                </table>
+
+                <!-- Loading Spinner -->
+                <div class="table-loading" id="tableLoading">
+                    <div class="spinner"></div>
+                    <p>Loading maintenance records...</p>
+                </div>
+
+                <!-- Empty State -->
+                <div class="table-empty" id="tableEmpty" style="display: none;">
+                    <div class="empty-icon">📂</div>
+                    <h4>No Maintenance Records Found</h4>
+                    <p>Enter data using the <strong>Python Tkinter desktop app</strong> or click <strong>"New Web Entry"</strong> above.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Manual Web Entry -->
+    <div class="modal-overlay" id="entryModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Record Machine Maintenance</h3>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <form id="webEntryForm" class="modal-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="serviceDate">Service Date <span class="required">*</span></label>
+                        <input type="date" id="serviceDate" name="service_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="machineName">Machine / Unit Name <span class="required">*</span></label>
+                        <input type="text" id="machineName" name="machine_name" placeholder="e.g. CNC Lathe 01 / Press #4" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="maintainedBy">Maintained By (Maintainer) <span class="required">*</span></label>
+                        <input type="text" id="maintainedBy" name="maintained_by" placeholder="e.g. John Doe / Tech Team A" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="checkedBy">Checked By (Inspector) <span class="required">*</span></label>
+                        <input type="text" id="checkedBy" name="checked_by" placeholder="e.g. Sarah Connor / QC Lead" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Inspection Result <span class="required">*</span></label>
+                    <div class="status-radio-group">
+                        <label class="radio-card radio-pass">
+                            <input type="radio" name="status" value="PASS" checked>
+                            <span class="radio-label">
+                                <span class="radio-symbol">✅</span>
+                                <span>PASS</span>
+                            </span>
+                        </label>
+                        <label class="radio-card radio-fail">
+                            <input type="radio" name="status" value="FAIL">
+                            <span class="radio-label">
+                                <span class="radio-symbol">❌</span>
+                                <span>FAIL</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="remarks">Remarks / Notes</label>
+                    <textarea id="remarks" name="remarks" rows="3" placeholder="Enter maintenance notes, parts replaced, or next due date..."></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" id="cancelModalBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveRecordBtn">💾 Save Maintenance Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
