@@ -8,7 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Clean Relative Stylesheet link for GitHub Pages and Flask -->
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
     <!-- Top Navigation Header -->
@@ -22,183 +23,224 @@
                 </div>
             </div>
             <div class="header-actions">
-                <span class="live-pill"><span class="dot"></span> Connected API</span>
+                <span class="status-badge-online" id="connectionBadge">
+                    <span class="pulse-dot"></span>
+                    <span id="connectionBadgeText">Connecting...</span>
+                </span>
+                <button class="btn btn-header-outline" id="openSettingsBtn" title="Configure Cloud or Local Server URL">
+                    ⚙️ API Settings
+                </button>
                 <button class="btn btn-primary" id="openModalBtn">
-                    <span class="btn-icon">＋</span> New Web Entry
+                    ＋ New Entry
                 </button>
             </div>
         </div>
     </header>
 
     <main class="main-container">
-        <!-- Dashboard Metric Cards -->
+        <!-- Dashboard Metric Summary Cards -->
         <section class="metrics-grid">
-            <div class="card metric-card">
+            <div class="metric-card card-total">
                 <div class="metric-info">
                     <span class="metric-title">Total Services</span>
                     <h2 class="metric-value" id="statTotal">0</h2>
+                    <span class="metric-sub">Logged machines</span>
                 </div>
-                <div class="metric-badge-icon icon-total">📋</div>
+                <div class="metric-icon-box icon-box-total">📋</div>
             </div>
             
-            <div class="card metric-card">
+            <div class="metric-card card-pass">
                 <div class="metric-info">
                     <span class="metric-title">Passed Checks</span>
-                    <h2 class="metric-value pass-text" id="statPass">0</h2>
+                    <h2 class="metric-value pass-accent" id="statPass">0</h2>
+                    <span class="metric-sub">Operating normally</span>
                 </div>
-                <div class="metric-badge-icon icon-pass">✅</div>
+                <div class="metric-icon-box icon-box-pass">✅</div>
             </div>
 
-            <div class="card metric-card">
+            <div class="metric-card card-fail">
                 <div class="metric-info">
                     <span class="metric-title">Failed Checks</span>
-                    <h2 class="metric-value fail-text" id="statFail">0</h2>
+                    <h2 class="metric-value fail-accent" id="statFail">0</h2>
+                    <span class="metric-sub">Requires maintenance</span>
                 </div>
-                <div class="metric-badge-icon icon-fail">⚠️</div>
+                <div class="metric-icon-box icon-box-fail">⚠️</div>
             </div>
 
-            <div class="card metric-card">
+            <div class="metric-card card-rate">
                 <div class="metric-info">
                     <span class="metric-title">Pass Rate</span>
                     <h2 class="metric-value" id="statRate">0%</h2>
+                    <span class="metric-sub">Quality compliance</span>
                 </div>
-                <div class="metric-badge-icon icon-rate">📊</div>
+                <div class="metric-icon-box icon-box-rate">📊</div>
             </div>
         </section>
 
-        <!-- Records Table Section -->
-        <section class="card table-card">
-            <div class="table-header-toolbar">
-                <div class="toolbar-title-group">
-                    <h3>Service & Inspection Records</h3>
-                    <span class="records-badge" id="recordCountBadge">0 Records</span>
+        <!-- Main Records Table Section -->
+        <section class="content-card">
+            <div class="card-toolbar">
+                <div class="toolbar-left">
+                    <h3 class="toolbar-title">Maintenance Records</h3>
+                    <span class="badge-count" id="recordCountBadge">0 Records</span>
                 </div>
                 
-                <div class="toolbar-controls">
+                <div class="toolbar-right">
                     <!-- Search Input -->
-                    <div class="search-box">
-                        <span class="search-icon">🔍</span>
-                        <input type="text" id="searchInput" placeholder="Search machine, maintainer, checker...">
+                    <div class="search-container">
+                        <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search machine, maintainer, checker...">
                     </div>
 
-                    <!-- Filter Dropdown -->
-                    <div class="filter-group">
-                        <select id="statusFilter" class="select-filter">
-                            <option value="">All Statuses</option>
-                            <option value="PASS">PASS Only</option>
-                            <option value="FAIL">FAIL Only</option>
-                        </select>
-                    </div>
+                    <!-- Status Filter Dropdown -->
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">All Statuses</option>
+                        <option value="PASS">PASS Only</option>
+                        <option value="FAIL">FAIL Only</option>
+                    </select>
+
+                    <!-- Export to CSV -->
+                    <button class="btn btn-outline" id="exportCsvBtn" title="Export records to CSV">
+                        📥 Export CSV
+                    </button>
 
                     <!-- Refresh Button -->
                     <button class="btn btn-outline" id="refreshBtn" title="Refresh Table">
-                        <span class="btn-icon">🔄</span> Refresh
+                        🔄 Refresh
                     </button>
                 </div>
             </div>
 
-            <!-- Responsive Table Container -->
-            <div class="table-wrapper">
-                <table class="data-table" id="recordsTable">
+            <!-- Responsive Table -->
+            <div class="table-responsive">
+                <table class="modern-table" id="recordsTable">
                     <thead>
                         <tr>
                             <th style="width: 70px;">#ID</th>
                             <th style="width: 130px;">Service Date</th>
-                            <th>Machine / Unit</th>
+                            <th>Machine / Unit Name</th>
                             <th>Maintained By</th>
                             <th>Checked By</th>
                             <th style="width: 110px;">Status</th>
-                            <th>Remarks</th>
+                            <th>Remarks & Notes</th>
                             <th style="width: 80px; text-align: center;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <!-- Dynamic Records populated by script.js -->
+                        <!-- Populated by script.js -->
                     </tbody>
                 </table>
 
-                <!-- Loading Spinner -->
-                <div class="table-loading" id="tableLoading">
-                    <div class="spinner"></div>
-                    <p>Loading maintenance records...</p>
+                <!-- Loading State -->
+                <div class="state-box" id="tableLoading">
+                    <div class="spinner-ring"></div>
+                    <p>Loading maintenance records from server...</p>
                 </div>
 
                 <!-- Empty State -->
-                <div class="table-empty" id="tableEmpty" style="display: none;">
-                    <div class="empty-icon">📂</div>
-                    <h4>No Maintenance Records Found</h4>
-                    <p>Enter data using the <strong>Python Tkinter desktop app</strong> or click <strong>"New Web Entry"</strong> above.</p>
+                <div class="state-box" id="tableEmpty" style="display: none;">
+                    <div class="state-icon">📂</div>
+                    <h4>No Records Found</h4>
+                    <p>Use the <strong>Python Tkinter Desktop app</strong> to key-in records, or click <strong>"＋ New Entry"</strong> above.</p>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- Modal for Manual Web Entry -->
-    <div class="modal-overlay" id="entryModal">
-        <div class="modal-card">
-            <div class="modal-header">
+    <!-- Modal: New Record Entry -->
+    <div class="modal-backdrop" id="entryModal">
+        <div class="modal-window">
+            <div class="modal-head">
                 <h3>Record Machine Maintenance</h3>
-                <button class="modal-close" id="closeModalBtn">&times;</button>
+                <button class="modal-btn-close" id="closeModalBtn">&times;</button>
             </div>
-            <form id="webEntryForm" class="modal-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="serviceDate">Service Date <span class="required">*</span></label>
+            <form id="webEntryForm" class="modal-body">
+                <div class="grid-2col">
+                    <div class="input-field-group">
+                        <label for="serviceDate">Service Date <span class="req-star">*</span></label>
                         <input type="date" id="serviceDate" name="service_date" required>
                     </div>
-                    <div class="form-group">
-                        <label for="machineName">Machine / Unit Name <span class="required">*</span></label>
-                        <input type="text" id="machineName" name="machine_name" placeholder="e.g. CNC Lathe 01 / Press #4" required>
+                    <div class="input-field-group">
+                        <label for="machineName">Machine / Unit Name <span class="req-star">*</span></label>
+                        <input type="text" id="machineName" name="machine_name" placeholder="e.g. CNC Lathe 01" required>
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="maintainedBy">Maintained By (Maintainer) <span class="required">*</span></label>
-                        <input type="text" id="maintainedBy" name="maintained_by" placeholder="e.g. John Doe / Tech Team A" required>
+                <div class="grid-2col">
+                    <div class="input-field-group">
+                        <label for="maintainedBy">Who Maintained Machine <span class="req-star">*</span></label>
+                        <input type="text" id="maintainedBy" name="maintained_by" placeholder="e.g. John Doe / Tech A" required>
                     </div>
-                    <div class="form-group">
-                        <label for="checkedBy">Checked By (Inspector) <span class="required">*</span></label>
-                        <input type="text" id="checkedBy" name="checked_by" placeholder="e.g. Sarah Connor / QC Lead" required>
+                    <div class="input-field-group">
+                        <label for="checkedBy">Who Checked Machine <span class="req-star">*</span></label>
+                        <input type="text" id="checkedBy" name="checked_by" placeholder="e.g. Sarah Connor / QC" required>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Inspection Result <span class="required">*</span></label>
-                    <div class="status-radio-group">
-                        <label class="radio-card radio-pass">
+                <div class="input-field-group">
+                    <label>Inspection Result <span class="req-star">*</span></label>
+                    <div class="status-selector">
+                        <label class="status-option-card status-option-pass">
                             <input type="radio" name="status" value="PASS" checked>
-                            <span class="radio-label">
-                                <span class="radio-symbol">✅</span>
+                            <div class="status-label-content">
+                                <span>✅</span>
                                 <span>PASS</span>
-                            </span>
+                            </div>
                         </label>
-                        <label class="radio-card radio-fail">
+                        <label class="status-option-card status-option-fail">
                             <input type="radio" name="status" value="FAIL">
-                            <span class="radio-label">
-                                <span class="radio-symbol">❌</span>
+                            <div class="status-label-content">
+                                <span>❌</span>
                                 <span>FAIL</span>
-                            </span>
+                            </div>
                         </label>
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="input-field-group">
                     <label for="remarks">Remarks / Notes</label>
-                    <textarea id="remarks" name="remarks" rows="3" placeholder="Enter maintenance notes, parts replaced, or next due date..."></textarea>
+                    <textarea id="remarks" name="remarks" rows="3" placeholder="Parts replaced, motor lubricated, next due date..."></textarea>
                 </div>
 
-                <div class="modal-footer">
+                <div class="modal-foot">
                     <button type="button" class="btn btn-outline" id="cancelModalBtn">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="saveRecordBtn">💾 Save Maintenance Record</button>
+                    <button type="submit" class="btn btn-primary" id="saveRecordBtn">💾 Save Record</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Toast Notification Container -->
-    <div class="toast-container" id="toastContainer"></div>
+    <!-- Modal: API Settings / Cloud URL Configuration -->
+    <div class="modal-backdrop" id="settingsModal">
+        <div class="modal-window">
+            <div class="modal-head">
+                <h3>⚙️ Backend API Connection</h3>
+                <button class="modal-btn-close" id="closeSettingsBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.875rem; color: #475569; line-height: 1.5;">
+                    Set your backend API endpoint so this GitHub Pages website can communicate with your database and Tkinter desktop app in real-time.
+                </p>
+                <div class="input-field-group">
+                    <label for="apiUrlInput">API Base URL</label>
+                    <input type="text" id="apiUrlInput" placeholder="e.g. http://127.0.0.1:5000 or https://your-app.onrender.com">
+                    <span style="font-size: 0.75rem; color: #94a3b8;">Default: <code>http://127.0.0.1:5000</code> or your cloud deployment URL.</span>
+                </div>
+                <div class="modal-foot">
+                    <button type="button" class="btn btn-outline" id="testApiBtn">⚡ Test Connection</button>
+                    <button type="button" class="btn btn-primary" id="saveApiBtn">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- Toast Notification Shelf -->
+    <div class="toast-shelf" id="toastShelf"></div>
+
+    <!-- Relative Script Link -->
+    <script src="./script.js"></script>
 </body>
 </html>
