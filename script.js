@@ -1,13 +1,11 @@
 /**
  * Machine Maintenance & Inspection Portal
- * Dynamic JavaScript supporting both GitHub Pages (Static) and Flask Backend
+ * Connected to PythonAnywhere Cloud API: https://dufuddgapp.pythonanywhere.com
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Determine API Base URL
-    // If hosted on github.io, use configured API URL from localStorage or fallback
-    const isGitHubPages = window.location.hostname.includes("github.io");
-    const defaultApi = isGitHubPages ? "http://127.0.0.1:5000" : window.location.origin;
+    // Default PythonAnywhere Cloud API
+    const defaultApi = "https://dufuddgapp.pythonanywhere.com";
     let apiBase = localStorage.getItem("maintenance_api_url") || defaultApi;
 
     // Elements
@@ -80,45 +78,12 @@ document.addEventListener("DOMContentLoaded", () => {
         isServerOnline = online;
         if (online) {
             connectionBadge.className = "status-badge-online";
-            connectionBadgeText.textContent = hostName ? `Connected (${hostName})` : "Server Online";
+            connectionBadgeText.textContent = hostName ? `Cloud API Online (${hostName})` : "Cloud API Online";
         } else {
             connectionBadge.className = "status-badge-offline";
-            connectionBadgeText.textContent = "Server Offline (Demo Mode)";
+            connectionBadgeText.textContent = "Connecting to Cloud API...";
         }
     }
-
-    /**
-     * Sample fallback data if backend server is not running
-     */
-    const DEMO_RECORDS = [
-        {
-            id: 101,
-            service_date: new Date().toISOString().split("T")[0],
-            machine_name: "CNC Milling Center 01",
-            maintained_by: "John Doe (Tech)",
-            checked_by: "Sarah Connor (QC)",
-            status: "PASS",
-            remarks: "Monthly spindle lubrication & calibration passed"
-        },
-        {
-            id: 102,
-            service_date: new Date(Date.now() - 86400000).toISOString().split("T")[0],
-            machine_name: "Hydraulic Press #4",
-            maintained_by: "Mike Tyson",
-            checked_by: "Sarah Connor (QC)",
-            status: "FAIL",
-            remarks: "Hydraulic pressure sensor B-2 needs replacement"
-        },
-        {
-            id: 103,
-            service_date: new Date(Date.now() - 172800000).toISOString().split("T")[0],
-            machine_name: "Surface Grinder G-12",
-            maintained_by: "Alex Wong",
-            checked_by: "David Miller",
-            status: "PASS",
-            remarks: "Replaced belt and aligned grinding wheel"
-        }
-    ];
 
     /**
      * Check Health & Load Records
@@ -140,19 +105,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
         } catch (e) {
-            // Server offline or CORS issue
+            // Server offline or updating
         }
 
-        // Offline / Fallback
         setConnectionStatus(false);
-        useFallbackData();
-    }
-
-    function useFallbackData() {
+        // If server is not yet updated on PythonAnywhere, show empty state or check again
         tableLoading.style.display = "none";
-        allRecords = DEMO_RECORDS;
-        updateStatsFromRecords(allRecords);
-        filterAndRenderTable();
+        if (allRecords.length === 0) {
+            tableEmpty.style.display = "flex";
+        }
     }
 
     /**
@@ -171,18 +132,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (err) {
             console.warn("Could not fetch stats:", err);
         }
-    }
-
-    function updateStatsFromRecords(records) {
-        const total = records.length;
-        const pass = records.filter(r => r.status === "PASS").length;
-        const fail = records.filter(r => r.status === "FAIL").length;
-        const rate = total > 0 ? ((pass / total) * 100).toFixed(1) : "0";
-
-        statTotal.textContent = total;
-        statPass.textContent = pass;
-        statFail.textContent = fail;
-        statRate.textContent = `${rate}%`;
     }
 
     /**
@@ -305,25 +254,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const normalizedApi = apiBase.replace(/\/+$/, "");
 
-        if (isServerOnline) {
-            try {
-                const res = await fetch(`${normalizedApi}/api/records/${id}`, { method: "DELETE", mode: "cors" });
-                const data = await res.json();
-                if (data.success) {
-                    showToast(`Record #${id} deleted.`);
-                    checkHealthAndLoad();
-                } else {
-                    showToast(data.error || "Failed to delete", "error");
-                }
-            } catch (err) {
-                showToast("Network error deleting record.", "error");
+        try {
+            const res = await fetch(`${normalizedApi}/api/records/${id}`, { method: "DELETE", mode: "cors" });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`Record #${id} deleted.`);
+                checkHealthAndLoad();
+            } else {
+                showToast(data.error || "Failed to delete", "error");
             }
-        } else {
-            // Local array removal in demo mode
-            allRecords = allRecords.filter(r => r.id !== id);
-            updateStatsFromRecords(allRecords);
-            filterAndRenderTable();
-            showToast(`Record #${id} removed.`);
+        } catch (err) {
+            showToast("Network error deleting record.", "error");
         }
     };
 
@@ -345,38 +286,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const normalizedApi = apiBase.replace(/\/+$/, "");
 
-        if (isServerOnline) {
-            try {
-                const res = await fetch(`${normalizedApi}/api/records`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                    mode: "cors"
-                });
+        try {
+            const res = await fetch(`${normalizedApi}/api/records`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+                mode: "cors"
+            });
 
-                const data = await res.json();
-                if (data.success) {
-                    showToast("Record saved successfully!");
-                    closeEntryModal();
-                    checkHealthAndLoad();
-                } else {
-                    const msg = data.errors ? data.errors.join(", ") : (data.error || "Error saving record.");
-                    showToast(msg, "error");
-                }
-            } catch (err) {
-                showToast("Network error saving record.", "error");
+            const data = await res.json();
+            if (data.success) {
+                showToast("Record saved successfully to cloud!");
+                closeEntryModal();
+                checkHealthAndLoad();
+            } else {
+                const msg = data.errors ? data.errors.join(", ") : (data.error || "Error saving record.");
+                showToast(msg, "error");
             }
-        } else {
-            // Add to local array in demo mode
-            const newRec = {
-                id: Math.floor(Math.random() * 900) + 100,
-                ...payload
-            };
-            allRecords.unshift(newRec);
-            updateStatsFromRecords(allRecords);
-            filterAndRenderTable();
-            closeEntryModal();
-            showToast("Saved locally (Demo mode)");
+        } catch (err) {
+            showToast("Could not connect to PythonAnywhere API.", "error");
         }
     });
 
@@ -441,12 +369,12 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const res = await fetch(`${testUrl}/api/health`, { mode: "cors" });
             if (res.ok) {
-                showToast("Connection Successful! Server is online.");
+                showToast("Connection Successful! Cloud API is online.");
             } else {
                 showToast(`Server returned status: ${res.status}`, "error");
             }
         } catch (e) {
-            showToast("Failed to connect. Check URL or ensure CORS is allowed.", "error");
+            showToast("Failed to connect. Make sure PythonAnywhere is reloaded.", "error");
         } finally {
             testApiBtn.textContent = "⚡ Test Connection";
         }
